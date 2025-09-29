@@ -1,53 +1,96 @@
-<div className="container">
-  <h1>🎮 Jogo da Forca</h1>
-  <svg height="250" width="200" className="forca">
-    {/* Base da forca */}
-    <line x1="10" y1="240" x2="150" y2="240" stroke="#000" strokeWidth="4"/>
-    <line x1="30" y1="240" x2="30" y2="20" stroke="#000" strokeWidth="4"/>
-    <line x1="30" y1="20" x2="100" y2="20" stroke="#000" strokeWidth="4"/>
-    <line x1="100" y1="20" x2="100" y2="40" stroke="#000" strokeWidth="4"/>
+'use client'; // Necessário para usar Hooks do React (useState, useRouter)
 
-    {/* Cabeça */}
-    {tentativas <= 5 && <circle cx="100" cy="60" r="20" stroke="#000" strokeWidth="4" fill="transparent"/>}
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-    {/* Corpo */}
-    {tentativas <= 4 && <line x1="100" y1="80" x2="100" y2="140" stroke="#000" strokeWidth="4"/>}
+// Constante para o número máximo de tentativas
+const MAX_TENTATIVAS = 3; 
 
-    {/* Braço esquerdo */}
-    {tentativas <= 3 && <line x1="100" y1="100" x2="70" y2="120" stroke="#000" strokeWidth="4"/>}
+export default function Home() {
+  const router = useRouter();
 
-    {/* Braço direito */}
-    {tentativas <= 2 && <line x1="100" y1="100" x2="130" y2="120" stroke="#000" strokeWidth="4"/>}
+  // 1. Variáveis de Estado para o Formulário
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // 2. Variáveis de Estado Corrigidas: Contagem de Tentativas e Mensagem de Erro
+  const [tentativasRestantes, setTentativasRestantes] = useState(MAX_TENTATIVAS);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  // 3. Estado para desabilitar o formulário após o limite de tentativas
+  const [isFormDisabled, setIsFormDisabled] = useState(false);
 
-    {/* Perna esquerda */}
-    {tentativas <= 1 && <line x1="100" y1="140" x2="80" y2="180" stroke="#000" strokeWidth="4"/>}
 
-    {/* Perna direita */}
-    {tentativas <= 0 && <line x1="100" y1="140" x2="120" y2="180" stroke="#000" strokeWidth="4"/>}
-  </svg>
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-  <h2>{palavraExibida}</h2>
-  <p>Tentativas restantes: {tentativas}</p>
+    // Se o formulário estiver desabilitado, não faz nada
+    if (isFormDisabled) return; 
 
-  {status === "jogando" && (
-    <div className="input-area">
-      <input
-        type="text"
-        maxLength={1}
-        value={letra}
-        onChange={(e) => setLetra(e.target.value)}
-      />
-      <button onClick={enviarLetra}>Enviar</button>
+    // Lógica de Validação (substitua isso pela sua lógica de API/Autenticação real)
+    // Usando um placeholder simples para teste:
+    if (email === 'teste@teste.com' && password === '123456') {
+      // Login bem-sucedido
+      setErrorMessage(''); // Limpa qualquer erro anterior
+      router.push('/dashboard');
+    } else {
+      // Login falhou
+      setErrorMessage('Credenciais inválidas.');
+
+      // --- Lógica de Tentativas Corrigida ---
+      const novasTentativas = tentativasRestantes - 1;
+      setTentativasRestantes(novasTentativas); // Atualiza o estado
+
+      // Verifica se o limite foi atingido
+      if (novasTentativas <= 0) { 
+        setErrorMessage('Número máximo de tentativas excedido. O login foi bloqueado.');
+        setIsFormDisabled(true); // Desabilita o formulário
+      }
+    }
+  };
+
+  return (
+    <div className="login-container">
+      <h1>Login</h1>
+      
+      {/* Exibe o erro se houver */}
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+      
+      {/* Exibe as tentativas restantes */}
+      {!isFormDisabled && (
+        <p>Tentativas restantes: {tentativasRestantes}</p>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isFormDisabled} // Desabilita o campo
+          />
+        </div>
+        <div>
+          <label htmlFor="password">Senha:</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isFormDisabled} // Desabilita o campo
+          />
+        </div>
+        <button 
+          type="submit" 
+          disabled={isFormDisabled} // Desabilita o botão
+        >
+          Entrar
+        </button>
+      </form>
     </div>
-  )}
-
-  <div className="tentativas">
-    <p>Letras corretas: {acertos.join(", ")}</p>
-    <p>Letras erradas: {erros.join(", ")}</p>
-  </div>
-
-  {status === "venceu" && <h2 className="venceu">🎉 Parabéns! Você venceu! A palavra era {palavra}.</h2>}
-  {status === "perdeu" && <h2 className="perdeu">💀 Você perdeu! A palavra era {palavra}.</h2>}
-
-  <button className="reiniciar" onClick={novaPalavra}>Reiniciar</button>
-</div>
+  );
+}
